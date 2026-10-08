@@ -485,6 +485,7 @@ GPU_TEST_CASE("cmd-draw-indexed-instanced", D3D11 | D3D12 | Vulkan | Metal | WGP
     testDraw<DrawIndexedInstancedTest>(device);
 }
 
+// WebGPU: these commands require Dawn's optional MultiDrawIndirect feature.
 GPU_TEST_CASE("cmd-draw-indirect", D3D11 | D3D12 | Vulkan)
 {
     testDraw<DrawIndirectTest>(device);

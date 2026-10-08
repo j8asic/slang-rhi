@@ -4,6 +4,7 @@
 #include "wgpu-texture.h"
 #include "wgpu-pipeline.h"
 #include "wgpu-shader-object.h"
+#include "wgpu-shader-program.h"
 #include "wgpu-utils.h"
 
 #include "../strings.h"
@@ -1014,13 +1015,26 @@ Result CommandEncoderImpl::getBindingData(RootShaderObject* rootObject, BindingD
     builder.m_constantBufferPool = &m_commandBuffer->m_constantBufferPool;
     builder.m_allocator = &m_commandBuffer->m_allocator;
     builder.m_bindingCache = &m_commandBuffer->m_bindingCache;
-    ShaderObjectLayout* specializedLayout = nullptr;
-    SLANG_RETURN_ON_FAIL(rootObject->getSpecializedLayout(specializedLayout));
-    return builder.bindAsRoot(
-        rootObject,
-        checked_cast<RootShaderObjectLayoutImpl*>(specializedLayout),
-        (BindingDataImpl*&)outBindingData
-    );
+    RefPtr<ShaderProgram> program = rootObject->m_shaderProgram;
+    if (program->isSpecializable())
+    {
+        ExtendedShaderObjectTypeList args;
+        SLANG_RETURN_ON_FAIL(rootObject->collectSpecializationArgs(args));
+        if (args.getCount() > 0)
+        {
+            RefPtr<ShaderProgram> specializedProgram;
+            SLANG_RETURN_ON_FAIL(device->getSpecializedProgram(program, args, specializedProgram.writeRef()));
+            program = specializedProgram;
+        }
+    }
+    // TODO: Binding creation needs compiled resource-usage metadata, so deferred
+    // shaders are currently compiled synchronously during draw/dispatch recording.
+    // To let the pipeline resolver batch compilation at finish(), capture parameter
+    // values during recording and defer native bind-group creation until resolution.
+    SLANG_RETURN_ON_FAIL(program->compileShaders(device));
+    auto specializedLayout = checked_cast<RootShaderObjectLayoutImpl*>(program->getRootShaderObjectLayout());
+    SLANG_RETURN_ON_FAIL(specializedLayout->ensurePipelineLayout(checked_cast<ShaderProgramImpl*>(program.get())));
+    return builder.bindAsRoot(rootObject, specializedLayout, (BindingDataImpl*&)outBindingData);
 }
 
 Result CommandEncoderImpl::finish(const CommandBufferDesc& desc, ICommandBuffer** outCommandBuffer)
