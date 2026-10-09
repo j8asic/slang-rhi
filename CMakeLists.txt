@@ -1140,6 +1140,7 @@ if(SLANG_RHI_BUILD_TESTS AND NOT SLANG_RHI_BUILD_SHARED AND NOT EMSCRIPTEN)
         tests/test-staging-heap.cpp
         tests/test-transient-buffer-heap.cpp
         tests/test-static-vector.cpp
+        tests/test-storage-texture.cpp
         tests/test-surface.cpp
         tests/test-synthetic-resource-bindings.cpp
         tests/test-texture-allocation-info.cpp
@@ -1157,6 +1158,7 @@ if(SLANG_RHI_BUILD_TESTS AND NOT SLANG_RHI_BUILD_SHARED AND NOT EMSCRIPTEN)
         tests/texture-utils.cpp
         tests/texture-test.cpp
         tests/test-task-pool.cpp
+        tests/test-upload-buffer.cpp
     )
     target_compile_definitions(slang-rhi-tests
         PRIVATE
